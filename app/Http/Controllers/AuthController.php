@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -32,7 +34,7 @@ class AuthController extends Controller
 
         // mengecek email sudah ada di database atau belum
         $checkEmail = User::where("email", $request->email)->first();
-        if ($checkEmail){
+        if ($checkEmail) {
             return response()->json([
                 "status" => "Error",
                 "message" => "Error email terdaftar",
@@ -50,7 +52,7 @@ class AuthController extends Controller
         ]);
 
         if ($res) {
-            $token = $res->createToken($validatedData["username"]);
+            $token = $res->createToken($validatedData["email"]);
             return response()->json([
                 "status" => "Success",
                 "message" => "Success registrasi",
@@ -65,5 +67,34 @@ class AuthController extends Controller
             "message" => "Gagal ketika registasi",
             "token" => null
         ], 400);
+    }
+
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        // mengecek email dari request user ke database
+        $user = User::where('email', $request->email)->first();
+
+        // check password
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                "status" => "Error",
+                "message" => "Kredensial yang diberikan salah",
+                "token" => null
+            ], 401);
+        }
+
+        // membuat token
+        $token = $user->createToken($request->email);
+
+        return response()->json([
+            "status" => "Success",
+            "message" => "Success Login",
+            "token" => $token->plainTextToken
+        ], 200);
     }
 }

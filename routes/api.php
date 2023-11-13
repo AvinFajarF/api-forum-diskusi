@@ -27,6 +27,8 @@ Route::prefix("/v1")->group(function() {
 
             // router for register
             Route::post("/register", "register");
+            // router for login
+            Route::post("/login", "login");
         });
     });
 
